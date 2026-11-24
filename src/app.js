@@ -6,16 +6,21 @@
  * Handles DOM events, input validation, state synchronization, and visualization.
  */
 
-// Environment-agnostic resolution of BrowserHistoryController dependency
-const ControllerClass = (typeof BrowserHistoryController !== 'undefined') 
-    ? BrowserHistoryController 
-    : (typeof require !== 'undefined' ? require('./BrowserHistoryController') : null);
-
-// Initialize single authoritative controller instance
-const controller = ControllerClass ? new ControllerClass() : null;
-
 // Determine environment
 const isBrowser = (typeof document !== 'undefined');
+
+// Resolve controller instance: uses WasmBrowserHistoryController
+let controller = null;
+if (isBrowser && typeof wasmController !== 'undefined') {
+    controller = wasmController;
+} else if (typeof require !== 'undefined') {
+    try {
+        const { WasmBrowserHistoryController } = require('./wasmController');
+        controller = new WasmBrowserHistoryController();
+    } catch (e) {
+        controller = null;
+    }
+}
 
 // DOM Element References (initialized only in browser environment)
 const elements = isBrowser ? {
@@ -158,14 +163,36 @@ function setStatus(message) {
 }
 
 /**
+ * Enables or disables interactive input controls during engine initialization.
+ * @param {boolean} enabled
+ */
+function setControlsEnabled(enabled) {
+    if (!isBrowser) return;
+    if (elements.btnVisit) elements.btnVisit.disabled = !enabled;
+    if (elements.urlInput) elements.urlInput.disabled = !enabled;
+    if (elements.quickCards) {
+        elements.quickCards.forEach(card => {
+            card.disabled = !enabled;
+            card.style.pointerEvents = enabled ? 'auto' : 'none';
+            card.style.opacity = enabled ? '1' : '0.6';
+        });
+    }
+}
+
+/**
  * Handles visiting a page.
- * Validates address, checks forward branch status, calls controller, and updates UI.
+ * Validates address, calls WebAssembly C engine, and updates UI.
  * 
  * @param {string} rawUrl - Entered address or quick shortcut URL.
  * @param {string} [presetTitle] - Optional explicit title.
- * @returns {HistoryNode|null}
+ * @returns {Object|null}
  */
 function handleVisit(rawUrl, presetTitle) {
+    if (!controller || !controller.isReady()) {
+        setStatus('C engine is loading, please wait...');
+        return null;
+    }
+
     const normalized = normalizeAddress(rawUrl);
 
     if (!normalized) {
@@ -178,13 +205,16 @@ function handleVisit(rawUrl, presetTitle) {
     }
 
     const title = presetTitle || normalized.title;
-    const hadForwardHistory = controller ? controller.canGoForward() : false;
+    const hadForwardHistory = controller.canGoForward();
 
-    const node = controller ? controller.visit(normalized.url, title) : null;
-    if (!node) {
-        setStatus('Enter a valid web address');
+    const result = controller.visit(normalized.url, title);
+    if (!result || !result.success) {
+        const errorText = (result && result.error) ? result.error : 'Enter a valid web address';
+        setStatus(errorText);
         return null;
     }
+
+    const node = result.page;
 
     // Set contextual status message
     try {
@@ -207,7 +237,7 @@ function handleVisit(rawUrl, presetTitle) {
  * Synchronizes viewport, address bar, navigation buttons, history, and inspector with controller state.
  */
 function updateUI() {
-    if (!isBrowser || !controller) return;
+    if (!isBrowser || !controller || !controller.isReady()) return;
 
     const current = controller.getCurrentPage();
 
@@ -253,10 +283,9 @@ function updateUI() {
  * Synchronizes the History panel list.
  */
 function updateHistoryView() {
-    if (!isBrowser || !controller) return;
+    if (!isBrowser || !controller || !controller.isReady()) return;
 
     const history = controller.getHistory();
-    const current = controller.getCurrentPage();
 
     elements.historyList.textContent = ''; // Safe clear
 
@@ -272,8 +301,8 @@ function updateHistoryView() {
             const row = document.createElement('div');
             row.className = 'history-row-item';
 
-            // Use object identity to highlight current active page
-            if (node === current) {
+            // Use C pointer-based isCurrent flag to highlight active page
+            if (node.isCurrent) {
                 row.classList.add('is-current');
             }
 
@@ -296,7 +325,7 @@ function updateHistoryView() {
  * Synchronizes the Data Structure Inspector (Back Stack, Forward Stack, Doubly Linked List).
  */
 function updateInspectorView() {
-    if (!isBrowser || !controller) return;
+    if (!isBrowser || !controller || !controller.isReady()) return;
 
     const current = controller.getCurrentPage();
 
@@ -358,7 +387,7 @@ function updateInspectorView() {
             const card = document.createElement('div');
             card.className = 'dll-card';
 
-            const isCurrent = (node === current);
+            const isCurrent = node.isCurrent;
             const isHead = (index === 0);
             const isTail = (index === dllNodes.length - 1);
 
@@ -425,7 +454,7 @@ if (isBrowser) {
 
     // Back Navigation
     elements.btnBack.addEventListener('click', () => {
-        if (!controller.canGoBack()) return;
+        if (!controller || !controller.canGoBack()) return;
         const newCurrent = controller.back();
         if (newCurrent) {
             setStatus(`Moved back to ${newCurrent.title}`);
@@ -435,7 +464,7 @@ if (isBrowser) {
 
     // Forward Navigation
     elements.btnForward.addEventListener('click', () => {
-        if (!controller.canGoForward()) return;
+        if (!controller || !controller.canGoForward()) return;
         const newCurrent = controller.forward();
         if (newCurrent) {
             setStatus(`Moved forward to ${newCurrent.title}`);
@@ -462,6 +491,7 @@ if (isBrowser) {
 
     // Clear History Button
     elements.btnClearHistory.addEventListener('click', () => {
+        if (!controller || !controller.isReady()) return;
         controller.clearHistory();
         setStatus('History cleared');
         updateUI();
@@ -497,9 +527,25 @@ if (isBrowser) {
         }
     });
 
-    // Initialize UI on startup
-    updateUI();
-    setStatus('Ready · New session');
+    // Asynchronous WebAssembly Engine Initialization
+    setControlsEnabled(false);
+    elements.btnBack.disabled = true;
+    elements.btnForward.disabled = true;
+    setStatus('Loading C navigation engine (WebAssembly)...');
+
+    if (controller && typeof controller.init === 'function') {
+        controller.init().then(() => {
+            setControlsEnabled(true);
+            updateUI();
+            setStatus('Ready · Pure C engine active');
+        }).catch(err => {
+            console.error('Fatal: Failed to initialize C WebAssembly engine:', err);
+            setStatus('Error: C WebAssembly engine failed to load');
+            setControlsEnabled(false);
+        });
+    } else {
+        setStatus('Error: WebAssembly controller unavailable');
+    }
 }
 
 // Export for Node.js test environment

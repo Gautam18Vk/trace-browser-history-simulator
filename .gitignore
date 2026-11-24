@@ -45,3 +45,7 @@ tmp/
 coverage/
 .nyc_output/
 
+# Compiled Native Binaries
+*.exe
+*.o
+*.obj
