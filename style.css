@@ -1,0 +1,928 @@
+/* ==========================================================================
+   Trace — Browser History Simulator
+   Visual System: Understated Light-Themed Desktop Utility
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Design Tokens & CSS Variables
+   -------------------------------------------------------------------------- */
+:root {
+    /* Exact Specified Palette */
+    --color-outer-bg: #EEEFEA;
+    --color-surface-white: #FFFFFF;
+    --color-toolbar-bg: #F7F8F5;
+    --color-text-primary: #263238;
+    --color-text-secondary: #525E58; /* Crisper contrast ratio (> 5.5:1) */
+    --color-border: #DCE1DC;
+    --color-primary-accent: #283B42;
+    --color-selected: #E8EFEB;
+
+    /* Subtle Extended States */
+    --color-hover: #F0F2EE;
+    --color-active: #E3E7E2;
+    --color-destructive: #C53929;
+    --color-destructive-subtle: #FDF3F2;
+
+    /* Typography */
+    --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Consolas, monospace;
+
+    /* Spacing System (4px base) */
+    --space-2: 2px;
+    --space-4: 4px;
+    --space-8: 8px;
+    --space-12: 12px;
+    --space-16: 16px;
+    --space-20: 20px;
+    --space-24: 24px;
+    --space-32: 32px;
+    --space-40: 40px;
+
+    /* Geometry & Corners */
+    --radius-window: 8px;
+    --radius-control: 4px;
+    --radius-card: 6px;
+
+    /* Subtle Elevation */
+    --shadow-window: 0 4px 24px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+    --shadow-drawer: 0 4px 18px rgba(0, 0, 0, 0.05);
+
+    /* Transitions */
+    --transition: 140ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* --------------------------------------------------------------------------
+   2. Global Reset
+   -------------------------------------------------------------------------- */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%;
+    width: 100%;
+    background-color: var(--color-outer-bg);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+input, button {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+}
+
+button {
+    cursor: pointer;
+    background: none;
+    border: none;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.35;
+}
+
+button:focus-visible, input:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(40, 59, 66, 0.2);
+    border-color: var(--color-primary-accent);
+}
+
+.is-hidden {
+    display: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. Canvas Wrapper & Window Layout
+   -------------------------------------------------------------------------- */
+.canvas-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-24) var(--space-32);
+    background-color: var(--color-outer-bg);
+}
+
+.browser-window {
+    width: 100%;
+    max-width: 1100px;
+    height: calc(100vh - 48px);
+    max-height: 820px;
+    min-height: 580px;
+    background-color: var(--color-surface-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-window);
+    box-shadow: var(--shadow-window);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   4. Header & Navigation Toolbar
+   -------------------------------------------------------------------------- */
+.browser-header {
+    background-color: var(--color-toolbar-bg);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+}
+
+/* Brand Bar */
+.brand-bar {
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-16);
+    border-bottom: 1px solid var(--color-border);
+    user-select: none;
+}
+
+.brand-identity {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+}
+
+.brand-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary-accent);
+}
+
+.brand-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    letter-spacing: -0.01em;
+}
+
+.brand-separator {
+    color: var(--color-border);
+    font-size: 14px;
+}
+
+.brand-subtitle {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+}
+
+.brand-actions {
+    display: flex;
+    align-items: center;
+}
+
+.header-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    background-color: var(--color-surface-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    transition: all var(--transition);
+}
+
+.header-action-btn:hover {
+    color: var(--color-text-primary);
+    background-color: var(--color-hover);
+    border-color: #C8D0C8;
+}
+
+.header-action-btn:active {
+    background-color: var(--color-active);
+    transform: scale(0.985);
+}
+
+/* Navigation Toolbar */
+.nav-toolbar {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    gap: var(--space-12);
+    padding: 0 var(--space-16);
+}
+
+.nav-buttons {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.nav-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-control);
+    color: var(--color-text-primary);
+    background-color: transparent;
+    border: 1px solid transparent;
+    transition: all var(--transition);
+}
+
+.nav-btn:hover:not(:disabled) {
+    background-color: var(--color-selected);
+    border-color: var(--color-border);
+}
+
+.nav-btn:active:not(:disabled) {
+    background-color: var(--color-active);
+    transform: scale(0.98);
+}
+
+/* Address Field */
+.address-field {
+    flex: 1;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    background-color: var(--color-surface-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    padding: 0 4px 0 10px;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.address-field:focus-within {
+    border-color: var(--color-primary-accent);
+    box-shadow: 0 0 0 1px var(--color-primary-accent);
+}
+
+.address-icon {
+    display: flex;
+    align-items: center;
+    color: var(--color-text-secondary);
+    margin-right: var(--space-8);
+}
+
+.address-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 13px;
+    color: var(--color-text-primary);
+}
+
+.address-input::placeholder {
+    color: var(--color-text-secondary);
+    opacity: 0.85;
+}
+
+/* Visit Action Button */
+.visit-btn {
+    height: 26px;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    background-color: var(--color-primary-accent);
+    color: #FFFFFF;
+    border-radius: 3px;
+    transition: background-color var(--transition), transform var(--transition);
+}
+
+.visit-btn:hover {
+    background-color: #1b282d;
+}
+
+.visit-btn:active {
+    background-color: #121c20;
+    transform: scale(0.98);
+}
+
+/* --------------------------------------------------------------------------
+   5. Browsing Viewport Area
+   -------------------------------------------------------------------------- */
+.viewport-area {
+    flex: 1;
+    overflow-y: auto;
+    background-color: var(--color-surface-white);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Start Screen */
+.start-screen {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-40) var(--space-24);
+}
+
+.start-container {
+    max-width: 480px;
+    width: 100%;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.start-illustration-box {
+    margin-bottom: var(--space-24);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.start-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    letter-spacing: -0.015em;
+    margin-bottom: 6px;
+}
+
+.start-subtitle {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-32);
+}
+
+/* Quick Access Section */
+.quick-access-section {
+    width: 100%;
+}
+
+.quick-access-heading {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-16);
+}
+
+.quick-access-grid {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-20);
+    flex-wrap: wrap;
+}
+
+.quick-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-8);
+    padding: var(--space-8);
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-card);
+    transition: all var(--transition);
+    min-width: 68px;
+}
+
+.quick-card:hover {
+    background-color: var(--color-toolbar-bg);
+    border-color: var(--color-border);
+    transform: translateY(-2px);
+}
+
+.quick-card:active {
+    transform: translateY(0);
+}
+
+.quick-icon-pod {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-card);
+    background-color: #FFFFFF;
+    border: 1px solid var(--color-border);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition);
+}
+
+.quick-card:hover .quick-icon-pod {
+    border-color: #C8D0C8;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+}
+
+.quick-card-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    letter-spacing: -0.01em;
+}
+
+/* Active Page State */
+.active-page-screen {
+    flex: 1;
+    padding: var(--space-40) var(--space-32);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.active-page-card {
+    max-width: 580px;
+    width: 100%;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    padding: var(--space-24);
+    background-color: var(--color-surface-white);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-16);
+}
+
+.active-page-identity {
+    display: flex;
+    align-items: center;
+    gap: var(--space-12);
+}
+
+.site-icon-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-card);
+    background-color: var(--color-toolbar-bg);
+    border: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary-accent);
+    flex-shrink: 0;
+}
+
+.active-page-meta {
+    flex: 1;
+    overflow: hidden;
+}
+
+.active-page-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+
+.active-page-url {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.active-page-url:hover {
+    color: var(--color-primary-accent);
+    text-decoration: underline;
+}
+
+.simulated-label-badge {
+    align-self: flex-start;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    background-color: var(--color-toolbar-bg);
+    border: 1px solid var(--color-border);
+    padding: 2px 8px;
+    border-radius: 3px;
+}
+
+/* --------------------------------------------------------------------------
+   6. Bottom Status Bar
+   -------------------------------------------------------------------------- */
+.browser-status-bar {
+    height: 30px;
+    background-color: var(--color-toolbar-bg);
+    border-top: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-16);
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.status-text {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+}
+
+.inspector-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-primary-accent);
+    background-color: var(--color-surface-white);
+    border: 1px solid var(--color-border);
+    padding: 3px 8px;
+    border-radius: var(--radius-control);
+    transition: all var(--transition);
+}
+
+.inspector-toggle-btn:hover {
+    background-color: var(--color-selected);
+    border-color: #BCC5BC;
+}
+
+.inspector-toggle-btn:active {
+    background-color: var(--color-hover);
+    transform: scale(0.98);
+}
+
+/* --------------------------------------------------------------------------
+   7. On-Demand History Panel (Right Drawer)
+   -------------------------------------------------------------------------- */
+.history-panel {
+    position: absolute;
+    top: 86px;
+    right: 0;
+    bottom: 30px;
+    width: 340px;
+    background-color: var(--color-surface-white);
+    border-left: 1px solid var(--color-border);
+    box-shadow: var(--shadow-drawer);
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-header {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-16);
+    border-bottom: 1px solid var(--color-border);
+    background-color: var(--color-toolbar-bg);
+}
+
+.panel-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.panel-close-btn {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-secondary);
+    border-radius: var(--radius-control);
+    transition: all var(--transition);
+}
+
+.panel-close-btn:hover {
+    color: var(--color-text-primary);
+    background-color: var(--color-hover);
+}
+
+.panel-content {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.history-rows {
+    display: flex;
+    flex-direction: column;
+}
+
+.history-row-item {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--color-toolbar-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    cursor: default;
+    transition: background-color var(--transition);
+}
+
+.history-row-item:hover {
+    background-color: var(--color-toolbar-bg);
+}
+
+.history-row-item.is-current {
+    background-color: var(--color-selected);
+    border-left: 3px solid var(--color-primary-accent);
+}
+
+.row-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.row-url {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.panel-empty-state {
+    padding: 48px var(--space-20);
+    text-align: center;
+}
+
+.empty-primary {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    margin-bottom: 4px;
+}
+
+.empty-secondary {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+}
+
+.panel-footer {
+    padding: var(--space-12) var(--space-16);
+    border-top: 1px solid var(--color-border);
+    background-color: var(--color-toolbar-bg);
+}
+
+.clear-history-btn {
+    width: 100%;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-destructive);
+    background-color: var(--color-surface-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    transition: all var(--transition);
+}
+
+.clear-history-btn:hover {
+    background-color: var(--color-destructive-subtle);
+    border-color: #E2B6B2;
+}
+
+/* --------------------------------------------------------------------------
+   8. On-Demand Data Structure Inspector (Bottom Drawer)
+   -------------------------------------------------------------------------- */
+.ds-inspector {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 30px;
+    height: 240px;
+    background-color: var(--color-surface-white);
+    border-top: 1px solid var(--color-border);
+    box-shadow: var(--shadow-drawer);
+    z-index: 25;
+    display: flex;
+    flex-direction: column;
+}
+
+.inspector-bar {
+    height: 32px;
+    background-color: var(--color-toolbar-bg);
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-16);
+}
+
+.inspector-bar-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.inspector-panes {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 200px 1fr 200px;
+    overflow: hidden;
+}
+
+.pane-stack {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--color-border);
+}
+
+.pane-stack:last-child {
+    border-right: none;
+    border-left: 1px solid var(--color-border);
+}
+
+.pane-dll {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.pane-header {
+    height: 28px;
+    background-color: var(--color-toolbar-bg);
+    border-bottom: 1px solid var(--color-border);
+    padding: 0 var(--space-12);
+    display: flex;
+    align-items: center;
+}
+
+.pane-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+}
+
+.pane-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-8);
+    display: flex;
+    flex-direction: column;
+}
+
+.stack-track {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.stack-indicator {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-4);
+    text-align: center;
+}
+
+.stack-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.stack-pill {
+    padding: 6px 8px;
+    background-color: var(--color-toolbar-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 3px;
+    font-size: 11px;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.stack-pill.is-top {
+    border-color: var(--color-primary-accent);
+    background-color: var(--color-selected);
+    font-weight: 600;
+}
+
+.dll-body {
+    overflow-x: auto;
+    padding: var(--space-16);
+    display: flex;
+    align-items: center;
+}
+
+.dll-nodes-track {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    min-width: 100%;
+}
+
+.dll-node-item {
+    display: flex;
+    align-items: center;
+}
+
+.dll-card {
+    min-width: 120px;
+    max-width: 160px;
+    padding: 8px 10px;
+    background-color: var(--color-surface-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.dll-card.is-current {
+    border-color: var(--color-primary-accent);
+    background-color: var(--color-selected);
+    box-shadow: 0 0 0 1px var(--color-primary-accent);
+}
+
+.node-badge-tag {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--color-primary-accent);
+}
+
+.node-title-text {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.node-url-text {
+    font-size: 10px;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dll-connector-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    user-select: none;
+}
+
+.pane-empty-notice {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    font-style: italic;
+}
+
+/* --------------------------------------------------------------------------
+   9. Responsiveness & Reduced Motion
+   -------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+    .canvas-wrapper {
+        padding: var(--space-12);
+    }
+    .browser-window {
+        height: calc(100vh - 24px);
+    }
+    .inspector-panes {
+        grid-template-columns: 160px 1fr 160px;
+    }
+    .brand-subtitle {
+        display: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .history-panel {
+        width: 100%;
+    }
+    .inspector-panes {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+}

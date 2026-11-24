@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trace — Browser History Simulator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="canvas-wrapper">
+        <!-- Main Application Window -->
+        <div class="browser-window">
+            <!-- App Header & Navigation Toolbar -->
+            <header class="browser-header">
+                <!-- Brand Bar -->
+                <div class="brand-bar">
+                    <div class="brand-identity">
+                        <!-- Opposing Navigation Arrows Logo -->
+                        <div class="brand-logo" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 8l5-5M4 8h16M20 16l-5 5M20 16H4"></path>
+                            </svg>
+                        </div>
+                        <span class="brand-name">Trace</span>
+                        <span class="brand-separator">·</span>
+                        <span class="brand-subtitle">Browser history simulator</span>
+                    </div>
+
+                    <div class="brand-actions">
+                        <button id="btnHistoryToggle" class="header-action-btn" title="View browsing history" aria-label="Toggle History">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            <span>History</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Navigation Toolbar -->
+                <div class="nav-toolbar">
+                    <div class="nav-buttons">
+                        <button id="btnBack" class="nav-btn" disabled title="Back (Alt + Left Arrow)" aria-label="Back">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                        </button>
+
+                        <button id="btnForward" class="nav-btn" disabled title="Forward (Alt + Right Arrow)" aria-label="Forward">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Address Bar Field -->
+                    <form id="addressBarForm" class="address-field" onsubmit="return false;">
+                        <span class="address-icon" aria-hidden="true">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="2" y1="12" x2="22" y2="12"></line>
+                                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                            </svg>
+                        </span>
+
+                        <input 
+                            type="text" 
+                            id="urlInput" 
+                            class="address-input" 
+                            placeholder="Enter a web address" 
+                            autocomplete="off" 
+                            spellcheck="false"
+                        >
+
+                        <button type="submit" id="btnVisit" class="visit-btn" title="Visit page">
+                            <span>Visit</span>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </header>
+
+            <!-- Main Browsing Viewport -->
+            <main id="viewportArea" class="viewport-area">
+                <!-- Start Screen -->
+                <section id="startScreen" class="start-screen">
+                    <div class="start-container">
+                        <!-- High-Contrast Clean Browser Window Line Illustration -->
+                        <div class="start-illustration-box" aria-hidden="true">
+                            <svg class="start-illustration" width="76" height="58" viewBox="0 0 80 64" fill="none">
+                                <rect x="3" y="3" width="74" height="56" rx="6" stroke="#283B42" stroke-width="1.8" fill="#FFFFFF"></rect>
+                                <line x1="3" y1="18" x2="77" y2="18" stroke="#DCE1DC" stroke-width="1.5"></line>
+                                <path d="M11 10.5l-2.2 2 2.2 2" stroke="#525E58" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                                <path d="M16 10.5l2.2 2-2.2 2" stroke="#525E58" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                                <rect x="23" y="7.5" width="48" height="9" rx="4.5" fill="#F7F8F5" stroke="#DCE1DC" stroke-width="1"></rect>
+                                <line x1="14" y1="29" x2="36" y2="29" stroke="#283B42" stroke-width="2.4" stroke-linecap="round"></line>
+                                <line x1="14" y1="38" x2="66" y2="38" stroke="#DCE1DC" stroke-width="1.8" stroke-linecap="round"></line>
+                                <line x1="14" y1="45" x2="52" y2="45" stroke="#DCE1DC" stroke-width="1.8" stroke-linecap="round"></line>
+                            </svg>
+                        </div>
+
+                        <h1 class="start-title">Start exploring.</h1>
+                        <p class="start-subtitle">Visit a page to begin your browsing session.</p>
+
+                        <!-- Quick Access Shortcuts with Authentic Site Icons -->
+                        <div class="quick-access-section">
+                            <span class="quick-access-heading">Quick access</span>
+                            <div class="quick-access-grid">
+                                <!-- Google -->
+                                <button type="button" class="quick-card" data-quick-url="https://google.com" data-quick-title="Google">
+                                    <div class="quick-icon-pod" aria-hidden="true">
+                                        <svg width="20" height="20" viewBox="0 0 24 24">
+                                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+                                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+                                        </svg>
+                                    </div>
+                                    <span class="quick-card-label">Google</span>
+                                </button>
+
+                                <!-- YouTube -->
+                                <button type="button" class="quick-card" data-quick-url="https://youtube.com" data-quick-title="YouTube">
+                                    <div class="quick-icon-pod" aria-hidden="true">
+                                        <svg width="22" height="16" viewBox="0 0 24 18" fill="none">
+                                            <path d="M23.498 2.625a3.016 3.016 0 0 0-2.122-2.136C19.505 0 12 0 12 0S4.495 0 2.624.489A3.016 3.016 0 0 0 .502 2.625C0 4.512 0 8.45 0 8.45s0 3.938.502 5.825a3.016 3.016 0 0 0 2.122 2.136c1.871.5 9.376.5 9.376.5s7.505 0 9.376-.5a3.016 3.016 0 0 0 2.122-2.136C24 12.388 24 8.45 24 8.45s0-3.938-.502-5.825z" fill="#FF0000"/>
+                                            <polygon points="9.6 12.05 15.82 8.45 9.6 4.85 9.6 12.05" fill="#FFFFFF"/>
+                                        </svg>
+                                    </div>
+                                    <span class="quick-card-label">YouTube</span>
+                                </button>
+
+                                <!-- Wikipedia -->
+                                <button type="button" class="quick-card" data-quick-url="https://wikipedia.org" data-quick-title="Wikipedia">
+                                    <div class="quick-icon-pod" aria-hidden="true">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#263238">
+                                            <path d="M12.09 13.048L9.78 6.94H7.29L2.83 17.51h2.29l1.1-2.65h4.15l.98 2.65h4.89l-4.15-4.462zm-4.99 2.5l1.63-3.92 1.48 3.92H7.1zm14.07-8.608h-2.52l-3.37 7.79-2.31-6.19h-1.63l3.22 8.52h1.63l4.98-10.12z"/>
+                                        </svg>
+                                    </div>
+                                    <span class="quick-card-label">Wikipedia</span>
+                                </button>
+
+                                <!-- GitHub -->
+                                <button type="button" class="quick-card" data-quick-url="https://github.com" data-quick-title="GitHub">
+                                    <div class="quick-icon-pod" aria-hidden="true">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#24292e">
+                                            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+                                        </svg>
+                                    </div>
+                                    <span class="quick-card-label">GitHub</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Active Webpage State -->
+                <section id="activePageScreen" class="active-page-screen is-hidden">
+                    <div class="active-page-card">
+                        <div class="active-page-identity">
+                            <div class="site-icon-avatar" aria-hidden="true">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                </svg>
+                            </div>
+
+                            <div class="active-page-meta">
+                                <h2 id="pageTitle" class="active-page-title">Page Title</h2>
+                                <a id="pageUrl" class="active-page-url" href="#" target="_blank" rel="noopener">https://example.com</a>
+                            </div>
+                        </div>
+
+                        <div class="simulated-label-badge">
+                            Simulated webpage
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <!-- Bottom Status Bar -->
+            <footer class="browser-status-bar">
+                <span id="statusMessage" class="status-text">Ready · New session</span>
+                <button id="btnInspectorToggle" class="inspector-toggle-btn" title="Toggle Data Structure Inspector">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="3" y1="15" x2="21" y2="15"></line>
+                    </svg>
+                    <span>Inspect data structures</span>
+                </button>
+            </footer>
+
+            <!-- On-Demand History Panel (Right Drawer) -->
+            <aside id="historyPanel" class="history-panel is-hidden" aria-label="Browsing history">
+                <div class="panel-header">
+                    <div class="panel-title-wrap">
+                        <h3 class="panel-title">History</h3>
+                    </div>
+                    <button id="btnCloseHistory" class="panel-close-btn" title="Close" aria-label="Close history">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="panel-content">
+                    <div id="historyList" class="history-rows"></div>
+
+                    <div id="historyEmptyState" class="panel-empty-state">
+                        <p class="empty-primary">No browsing history</p>
+                        <p class="empty-secondary">Visited pages will appear here in chronological order.</p>
+                    </div>
+                </div>
+
+                <div class="panel-footer">
+                    <button id="btnClearHistory" class="clear-history-btn">
+                        Clear history
+                    </button>
+                </div>
+            </aside>
+
+            <!-- On-Demand Data Structure Inspector (Bottom Drawer) -->
+            <section id="dsInspector" class="ds-inspector is-hidden" aria-label="Data structure inspector">
+                <div class="inspector-bar">
+                    <span class="inspector-bar-title">Data structures</span>
+                    <button id="btnCloseInspector" class="panel-close-btn" title="Close inspector" aria-label="Close inspector">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="inspector-panes">
+                    <!-- Back Stack -->
+                    <div class="pane-stack">
+                        <div class="pane-header">
+                            <span class="pane-title">Back Stack</span>
+                        </div>
+                        <div class="pane-body">
+                            <div class="stack-track">
+                                <div class="stack-indicator">TOP</div>
+                                <div id="backStackList" class="stack-list"></div>
+                                <div id="backStackEmpty" class="pane-empty-notice">Empty</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Doubly Linked List (Main Area) -->
+                    <div class="pane-dll">
+                        <div class="pane-header">
+                            <span class="pane-title">Doubly Linked List</span>
+                        </div>
+                        <div class="pane-body dll-body">
+                            <div id="dllList" class="dll-nodes-track"></div>
+                            <div id="dllEmpty" class="pane-empty-notice">List is empty</div>
+                        </div>
+                    </div>
+
+                    <!-- Forward Stack -->
+                    <div class="pane-stack">
+                        <div class="pane-header">
+                            <span class="pane-title">Forward Stack</span>
+                        </div>
+                        <div class="pane-body">
+                            <div class="stack-track">
+                                <div class="stack-indicator">TOP</div>
+                                <div id="forwardStackList" class="stack-list"></div>
+                                <div id="forwardStackEmpty" class="pane-empty-notice">Empty</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Core Data Structure Scripts -->
+    <script src="src/Stack.js"></script>
+    <script src="src/Node.js"></script>
+    <script src="src/DoublyLinkedList.js"></script>
+    <script src="src/BrowserHistoryController.js"></script>
+    <script src="src/app.js"></script>
+</body>
+</html>
